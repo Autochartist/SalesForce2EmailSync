@@ -353,7 +353,6 @@ class SendyPHP
 
         // if not subscribed then we don't want to update any details, so we won't "subscribe" again
         if((($res['status']) && ($res['message'] == 'Subscribed')) || ($res['message'] == 'Email does not exist in list')) {
-
             $subscriber = array(
                 'email' => $contact['email'],
                 'FirstName' => $contact['firstname'],
@@ -388,7 +387,7 @@ class SendyPHP
 
         $n = count($contacts) * count($lists);
         $i = 0;
-        $onepercent = floor($n / 100);
+        $onepercent = floor($n / 100)+1;
     
         foreach($lists as $listid => $listname) 
         {
