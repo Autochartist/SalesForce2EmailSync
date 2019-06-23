@@ -349,14 +349,14 @@ class SendyPHP
         $this->setListId($listid);
 
         // check status. 
-        $res = $this->substatus($contact['email']);
+        $res = $this->substatus($contact['Email']);
 
         // if not subscribed then we don't want to update any details, so we won't "subscribe" again
-        if((($res['status']) && ($res['message'] == 'Subscribed')) || ($res['message'] == 'Email does not exist in list')) {
+        if(($res['message'] == 'Subscribed') || ($res['message'] == 'Email does not exist in list')) {
             $subscriber = array(
-                'email' => $contact['email'],
-                'FirstName' => $contact['firstname'],
-                'LastName' => $contact['lastname'],
+                'email' => $contact['Email'],
+                'FirstName' => $contact['FirstName'],
+                'LastName' => $contact['LastName'],
                 'AccountName' => $contact['accountname'],
                 'BrokerIDs' => self::array2csv($contact['brokerids']),
                 'Products' => self::array2csv($contact['products']),
