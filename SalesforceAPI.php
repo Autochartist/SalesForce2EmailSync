@@ -146,7 +146,7 @@ class SalesforceAPI {
 
     function getContacts() 
     {
-        $query = "SELECT AccountId, firstName, lastName, Email FROM Contact WHERE Account.Name = 'Oanda'";
+        $query = "SELECT AccountId, firstName, lastName, Email FROM Contact";
         $groupBy = 'AccountId';
         return $this->getEntity($query, $groupBy);
     }
@@ -162,7 +162,7 @@ class SalesforceAPI {
 
     function getOpportunities()
     {
-        $query = "SELECT Id, Name, AccountId, Account.Name, StageName, (Select Id, PricebookEntry.Product2.Name From OpportunityLineItems) FROM Opportunity WHERE Account.Name = 'Oanda'";
+        $query = "SELECT Id, Name, AccountId, Account.Name, StageName, (Select Id, PricebookEntry.Product2.Name From OpportunityLineItems) FROM Opportunity";
         $groupBy = 'AccountId';
         return $this->getEntity($query, $groupBy);
     }
