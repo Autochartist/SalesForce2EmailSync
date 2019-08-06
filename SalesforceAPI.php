@@ -146,7 +146,7 @@ class SalesforceAPI {
 
     function getContacts() 
     {
-        $query = 'SELECT AccountId, firstName, lastName, Email FROM Contact';
+        $query = "SELECT AccountId, firstName, lastName, Email FROM Contact";
         $groupBy = 'AccountId';
         return $this->getEntity($query, $groupBy);
     }
@@ -165,49 +165,7 @@ class SalesforceAPI {
         $query = "SELECT Id, Name, AccountId, Account.Name, StageName, (Select Id, PricebookEntry.Product2.Name From OpportunityLineItems) FROM Opportunity";
         $groupBy = 'AccountId';
         return $this->getEntity($query, $groupBy);
-
-        /*        
-        // Get all opportunities
-        $query = "SELECT Id, Name, AccountId, Account.Name, StageName, (Select Id, PricebookEntry.Product2.Name From OpportunityLineItems) FROM Opportunity";
-        $url = $this->baseUrl."/services/data/v20.0/query?q=" . urlencode($query);
-        $response = $this->call($url, $this->getAccessToken(), 'GET', [], true);
-        // Extract opportunity details from Salesforce response
-        $opportunities = [];
-        if (!is_array($response) || !isset($response['records']) || (count($response['records']) == 0) ) {
-            return $opportunities;
-        }
-
-        foreach ($response['records'] as $record) {
-            $opportunity = [];
-            $products = [];
-            $opportunity['Id'] = $record['Id'];
-            $opportunity["AccountId"] = $record['AccountId'];
-            $opportunity["Name"] = $record['Name'];
-            $opportunity["StageName"] = $record['StageName'];
-
-            if (isset($record['Account']) && is_array($record['Account']) && isset($record['Account']['Name'])) {
-                $opportunity["AccountName"] = $record['Account']['Name'];
-            }
-
-            if (!isset($record['OpportunityLineItems']) || !is_array($record['OpportunityLineItems']) || (count($record['OpportunityLineItems']) == 0) ||
-                !isset($record['OpportunityLineItems']['records']) || !is_array($record['OpportunityLineItems']['records']) || (count($record['OpportunityLineItems']['records']) == 0)
-            ) {
-                continue;
-            }
-
-            foreach ($record['OpportunityLineItems']['records'] as $lineItem) {
-                if (isset($lineItem['PricebookEntry']) && isset($lineItem['PricebookEntry']['Product2']) && isset($lineItem['PricebookEntry']['Product2']['Name']) ) {
-                    $products[] = $lineItem['PricebookEntry']['Product2']['Name'];
-                }
-            }
-            
-            $opportunity['Products'] = $products;
-            $opportunities[] = $opportunity;
-        }
-        */
-        return $opportunities;
     }
-
 
 }
 

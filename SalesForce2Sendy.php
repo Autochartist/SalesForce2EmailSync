@@ -18,11 +18,61 @@ $DEFAULTLISTID = '892ihGh1ynxfV0SXPIR5R7Dg';
 // SalesForce details
 $baseUrl = 'https://autochartist.my.salesforce.com';
 $username = 'ilan@autochartist.com';
-$password = 'svp3rm4n';
+$password = 'n1c0l34zb3l';
 $consumerKey = '3MVG98_Psg5cppyY2W_omRywK7DHkgXNVxaBioZzuXYk562.R0WUQwNKpBjy9IUD6nnRtCKquzh9vD3FAzIOm';
 $consumerSecret = '386A9BFFC7F2DDCB56D6F8F9E9BFAE6AC2D2147C3DB9858868323CE46DB588DA';
 
+// keep opportunities with the highest imprtance rating
+function filterOpportunities(&$opportunities)
+{
+    # set stage name preference order
+    foreach ($opportunities as &$account) {
+        $minStage = 999;
+        foreach ($account as &$opportunity) {
+            $sn = $opportunity['StageName'];
+            if($sn == 'Delivered') {
+                $opportunity['StageOrder'] = 1;
+            } else if($sn == 'Won') {
+                $opportunity['StageOrder'] = 2;
+            } else if($sn == 'Lost') {
+                $opportunity['StageOrder'] = 3;
+            } else if($sn == 'Cancelled') {
+                $opportunity['StageOrder'] = 4;
+            } else if($sn == 'Negotiation - T&C') {
+                $opportunity['StageOrder'] = 5;
+            } else if($sn == 'Negotiation') {
+                $opportunity['StageOrder'] = 6;
+            } else if($sn == 'Qualify') {
+                $opportunity['StageOrder'] = 7;
+            } else if($sn == 'Qualify - Delay') {
+                $opportunity['StageOrder'] = 8;
+            } else if($sn == 'Pre - Qualify') {
+                $opportunity['StageOrder'] = 9;
+            } else {
+                $opportunity['StageOrder'] = -1;
+            }
 
+            # save min stage for this account
+            if($opportunity['StageOrder'] < $minStage) {
+                $minStage = $opportunity['StageOrder'];
+            }
+        }
+
+        # remove all opportunities with StageOrder < minstage
+        $index = 0;
+        foreach ($account as $opportunity) {
+            $so = $opportunity['StageOrder'];
+            if($so > $minStage) {
+                echo("remove $index: ".$opportunity['StageName']."\n");
+                unset($account[$index]);
+            } else {
+                echo("keep ".$opportunity['StageName']."\n");
+            }
+            $index++;
+        }
+    }
+
+}
 
 // merges contacts, opportunities and configs into objects we can send to sendy
 function mergeResults($contacts, $opportunities, $configs)
@@ -63,11 +113,7 @@ function mergeResults($contacts, $opportunities, $configs)
             foreach($accountOpportunities as $opportunity) 
             {
                 $accountname = $opportunity['Account']['Name'];
-                if($stage == null) { 
-                    $stage = $opportunity['StageName'];
-                } else if(($stage != 'Won') || ($stage != 'Delivered')) {
-                    $stage = $opportunity['StageName'];
-                }
+                $stage = $opportunity['StageName'];
 
                 if($opportunity['OpportunityLineItems'] != null) 
                 {
@@ -122,6 +168,7 @@ try {
     // fetch opportunities
     echo("fetching opportunities\n");
     $opportunities = $salesforceAPI->getOpportunities();
+    filterOpportunities($opportunities);
     echo("downloaded ".count($opportunities)." opportunities\n");
     #print_r_n($opportunities, 5);
 
