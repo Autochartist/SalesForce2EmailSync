@@ -93,10 +93,7 @@ function mergeResults($contacts, $opportunities, $configs)
 
     foreach ($contacts as $accountid => $accountContacts) 
     {
-        if($accountid != '0015800000QKcthAAD') continue;
-
         $brokerids = [];
-//AccountID (Oanda): 0015800000QKcthAAD
 
         if(isset($configs[$accountid])) {
 
