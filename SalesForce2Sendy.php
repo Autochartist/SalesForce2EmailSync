@@ -22,57 +22,68 @@ $password = 'n1c0l34zb3l';
 $consumerKey = '3MVG98_Psg5cppyY2W_omRywK7DHkgXNVxaBioZzuXYk562.R0WUQwNKpBjy9IUD6nnRtCKquzh9vD3FAzIOm';
 $consumerSecret = '386A9BFFC7F2DDCB56D6F8F9E9BFAE6AC2D2147C3DB9858868323CE46DB588DA';
 
+// priority of sales stages
+function getStageImportance($sn)
+{
+    if($sn == 'Delivered') {
+        return 1;
+    } else if($sn == 'Won') {
+        return  2;
+    } else if($sn == 'Lost') {
+        return  3;
+    } else if($sn == 'Cancelled') {
+        return  4;
+    } else if($sn == 'Negotiation - T&C') {
+        return  5;
+    } else if($sn == 'Negotiation') {
+        return  6;
+    } else if($sn == 'Qualify') {
+        return  7;
+    } else if($sn == 'Qualify - Delay') {
+        return  8;
+    } else if($sn == 'Pre - Qualify') {
+        return  9;
+    }
+    return  10;
+}
+
 // keep opportunities with the highest imprtance rating
 function filterOpportunities(&$opportunities)
 {
-    # set stage name preference order
-    foreach ($opportunities as &$account) {
-        $minStage = 999;
-        foreach ($account as &$opportunity) {
-            $sn = $opportunity['StageName'];
-            if($sn == 'Delivered') {
-                $opportunity['StageOrder'] = 1;
-            } else if($sn == 'Won') {
-                $opportunity['StageOrder'] = 2;
-            } else if($sn == 'Lost') {
-                $opportunity['StageOrder'] = 3;
-            } else if($sn == 'Cancelled') {
-                $opportunity['StageOrder'] = 4;
-            } else if($sn == 'Negotiation - T&C') {
-                $opportunity['StageOrder'] = 5;
-            } else if($sn == 'Negotiation') {
-                $opportunity['StageOrder'] = 6;
-            } else if($sn == 'Qualify') {
-                $opportunity['StageOrder'] = 7;
-            } else if($sn == 'Qualify - Delay') {
-                $opportunity['StageOrder'] = 8;
-            } else if($sn == 'Pre - Qualify') {
-                $opportunity['StageOrder'] = 9;
-            } else {
-                $opportunity['StageOrder'] = -1;
-            }
 
-            # save min stage for this account
-            if($opportunity['StageOrder'] < $minStage) {
-                $minStage = $opportunity['StageOrder'];
+    # get the most important stage per accountid
+    $stages = [];
+    foreach ($opportunities as &$accountOpp) {
+        foreach ($accountOpp as &$opportunity) {
+            $accountid = $opportunity['AccountId'];
+            $stageName = $opportunity['StageName'];
+            $stageImportance = getStageImportance($stageName);
+            if(!isset($stages[$accountid])) {
+                $stages[$accountid] = $stageName;
+            } else {
+                $currentStageImportance = getStageImportance($stages[$accountid]);
+                if($stageImportance < $currentStageImportance) {
+                    $stages[$accountid] = $stageName;
+                }                
             }
         }
+    }
 
-        # remove all opportunities with StageOrder < minstage
+    # set stage name preference order
+    foreach ($opportunities as &$accountOpp) {
+        # remove all opportunities with StageOrder > minstage
         $index = 0;
-        foreach ($account as $opportunity) {
-            $so = $opportunity['StageOrder'];
-            if($so > $minStage) {
-                #echo("remove $index: ".$opportunity['StageName']."\n");
-                unset($account[$index]);
-            } else {
-                #echo("keep ".$opportunity['StageName']."\n");
+        foreach ($accountOpp as $opportunity) {
+            $accountid = $opportunity['AccountId'];
+            $stageName = $opportunity['StageName'];
+            if($stageName != $stages[$accountid]) {
+                unset($accountOpp[$index]);
             }
             $index++;
         }
     }
-
 }
+
 
 // merges contacts, opportunities and configs into objects we can send to sendy
 function mergeResults($contacts, $opportunities, $configs)
@@ -82,17 +93,13 @@ function mergeResults($contacts, $opportunities, $configs)
 
     foreach ($contacts as $accountid => $accountContacts) 
     {
-        #echo $accountid."\n";
+        if($accountid != '0015800000QKcthAAD') continue;
 
-        $accountConfigs = [];
-        $accountOpportunities = [];
         $brokerids = [];
-        $products = [];
-        $stage = null;
-        $accountname = null;
+//AccountID (Oanda): 0015800000QKcthAAD
 
-        if(isset($configs[$accountid])) 
-        {
+        if(isset($configs[$accountid])) {
+
             $accountConfigs = $configs[$accountid];
             #echo "\taccountConfigs found\n";
             // extract the brokerids from the accountConfigs object into an array
@@ -102,18 +109,22 @@ function mergeResults($contacts, $opportunities, $configs)
                 #echo "\tbid ".$config['BrokerID__c']." added\n";
             }
         }
-
+        
+        $products = [];
+        $stage = null;
+        $accountname = null;
         if(isset($opportunities[$accountid])) 
         {
             $accountOpportunities = $opportunities[$accountid];
             #echo "\taccountOpportunities found\n";
+
             // extract the product names, account names, opportunity names, stage from the accountOpportunities object into an array
             foreach($accountOpportunities as $opportunity) 
             {
                 $accountname = $opportunity['Account']['Name'];
                 $stage = $opportunity['StageName'];
 
-                if($opportunity['OpportunityLineItems'] != null) 
+                if(isset($opportunity['OpportunityLineItems']))
                 {
                     foreach($opportunity['OpportunityLineItems']['records'] as $r) 
                     {
@@ -122,9 +133,8 @@ function mergeResults($contacts, $opportunities, $configs)
                     }
                 }
             }
-            #echo "\tstage: $stage, accountname: $accountname\n";
+
         }
-        
 
         // add all the brokerids and products accountContacts
         foreach($accountContacts as $contact) {
@@ -132,8 +142,6 @@ function mergeResults($contacts, $opportunities, $configs)
             $contact['accountname'] = $accountname;
             $contact['products'] = $products;
             $contact['brokerids'] = $brokerids;
-            //var_dump($contact);
-            #echo "\tadd contact: ". $contact['Email']."\n";
             $results[] = $contact;
         }
         
