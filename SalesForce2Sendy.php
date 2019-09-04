@@ -11,8 +11,12 @@ $lists = array(
     "ficka0htKNqsSn892U10Fh0g" => "Webinars & Education", 
     "XoIgXQqKGKyjYFhb2EUWyQ" => "Product Updates"
 );
+#$lists = array( 
+#    "ficka0htKNqsSn892U10Fh0g" => "Webinars & Education"
+#);
+
 $APIKEY = 'eYl2oczos9u9vvdW2s5T';
-$URL = 'https://sendy.autochartist.com/sendy/';
+$URL = 'https://sendy.autochartist.com';
 $DEFAULTLISTID = '892ihGh1ynxfV0SXPIR5R7Dg';
 
 // SalesForce details

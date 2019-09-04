@@ -167,6 +167,7 @@ class SendyPHP
         }
 
         //Handle the results
+        $return = [];
         switch ($result) {
             case 'Subscribed':
             case 'Unsubscribed':
@@ -174,19 +175,22 @@ class SendyPHP
             case 'Bounced':
             case 'Soft bounced':
             case 'Complained':
-                return array(
+                $return = array(
                     'status' => true,
                     'message' => $result
                     );
                 break;
 
             default:
-                return array(
+                $return = array(
                     'status' => false,
                     'message' => $result
                     );
                 break;
         }
+        echo "$email: ";
+        print_r($return);
+        return $return;
     }
 
     public function subcount($list = "")
