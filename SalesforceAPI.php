@@ -119,26 +119,27 @@ class SalesforceAPI {
     function getEntity($query, $groupBy) 
     {
         $query .= " order by $groupBy";
-        $url = $this->baseUrl."/services/data/v20.0/query?q=" . urlencode($query);
-        $response = $this->call($url, $this->getAccessToken(), 'GET', [], true);
-
         $entities = [];
-        if (!is_array($response) || (!isset($response['records'])) || (count($response['records']) == 0) ) {
-            return $entities;
-        }
 
-        $previd = -1;
-        foreach ($response['records'] as $record) {
-            #var_dump($record);
-            $id = $record[$groupBy];
-            unset($record['attributes']);            
-            if($previd != $id) {
-                $entities[$id] = array($record);
-            } else {
+        $url = $this->baseUrl."/services/data/v20.0/query?q=" . urlencode($query);
+        do {
+            $response = $this->call($url, $this->getAccessToken(), 'GET', [], true);
+
+            if (!is_array($response) || (!isset($response['records'])) || (count($response['records']) == 0) ) {
+                return $entities;
+            }
+
+            foreach ($response['records'] as $record) {
+                unset($record['attributes']);            
+                $id = $record[$groupBy];
                 $entities[$id][] = $record;
             }
-            $previd = $id;
-        }
+
+            if($response['done'] == false) {
+                $url = $this->baseUrl.$response['nextRecordsUrl'];
+            }
+            
+        } while($response['done'] == false);
 
         return $entities;
     }

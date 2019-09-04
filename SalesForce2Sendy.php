@@ -90,10 +90,13 @@ function mergeResults($contacts, $opportunities, $configs)
 {
     // Merge results in desired format
     $results = [];
-
+    
     foreach ($contacts as $accountid => $accountContacts) 
     {
+#        if($accountid != '0015800000wHGS0AAO') continue;
+
         $brokerids = [];
+//AccountID (Oanda): 0015800000QKcthAAD
 
         if(isset($configs[$accountid])) {
 
@@ -143,7 +146,6 @@ function mergeResults($contacts, $opportunities, $configs)
         }
         
     }
-
     return $results;
 }
 
@@ -173,6 +175,7 @@ try {
     }
 
     // fetch opportunities
+    
     echo("fetching opportunities\n");
     $opportunities = $salesforceAPI->getOpportunities();
     filterOpportunities($opportunities);
@@ -186,7 +189,7 @@ try {
     // Get contact details
     echo("fetching contacts\n");
     $contacts = $salesforceAPI->getContacts();
-    echo("downloaded ".count($contacts)." contacts\n");
+    echo("downloaded contacts in ".count($contacts)." accounts\n");
 
     // merge results
     $results = mergeResults($contacts, $opportunities, $configs);
