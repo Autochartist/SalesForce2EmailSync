@@ -65,7 +65,7 @@ class SendyPHP
             );
         }
 
-        $type = 'subscribe';
+        $type = 'subscribe.php';
 
         //Send the subscribe
         try {
@@ -111,7 +111,7 @@ class SendyPHP
             );
         }
 
-        $type = 'unsubscribe';
+        $type = 'unsubscribe.php';
 
         //Send the unsubscribe
         try {
@@ -188,8 +188,6 @@ class SendyPHP
                     );
                 break;
         }
-        echo "$email: ";
-        print_r($return);
         return $return;
     }
 
