@@ -5,16 +5,11 @@ require_once(__ROOT__.'/SendyAPI.php');
 require_once(__ROOT__.'/SalesforceAPI.php');
 
 // sendy details
-/*
 $lists = array( 
     "892ihGh1ynxfV0SXPIR5R7Dg" => "Company News", 
     "guw1GdZ38l13mv5qx3hQ892g" => "Monthly value-added", 
     "ficka0htKNqsSn892U10Fh0g" => "Webinars & Education", 
     "XoIgXQqKGKyjYFhb2EUWyQ" => "Product Updates"
-);
-*/
-$lists = array( 
-    "ficka0htKNqsSn892U10Fh0g" => "Webinars & Education"
 );
 
 $APIKEY = 'eYl2oczos9u9vvdW2s5T';
@@ -99,10 +94,8 @@ function mergeResults($contacts, $opportunities, $configs)
     
     foreach ($contacts as $accountid => $accountContacts) 
     {
-#        if($accountid != '0015800000wHGS0AAO') continue;
 
         $brokerids = [];
-//AccountID (Oanda): 0015800000QKcthAAD
 
         if(isset($configs[$accountid])) {
 
