@@ -166,12 +166,12 @@ function print_r_n($array, $n)
     }
 }
 
-function sendBouncedToZapier($postdata)
+function sendBouncedToZapier($url, $postdata)
 {
     $curl = curl_init();
 
     curl_setopt_array($curl, array(
-      CURLOPT_URL => "https://hooks.zapier.com/hooks/catch/2964702/o35se69/",
+      CURLOPT_URL => $url,
       CURLOPT_RETURNTRANSFER => true,
       CURLOPT_SSL_VERIFYPEER => 0,
       CURLOPT_SSL_VERIFYHOST => 0,
@@ -195,7 +195,7 @@ function sendBouncedToZapier($postdata)
     if ($err) {
       return "cURL Error #:" . $err;
     }
-    
+
     return $response;
 }
 
@@ -241,7 +241,6 @@ try {
 
     // send all details to Sendy
     $res = $sendy->updateSalesForceContacts($results, $lists);
-    echo ("updated sendy: errors: ".$res['errors']."\n");
 
     // filter for bounced contacts
     $items = [];
@@ -254,8 +253,9 @@ try {
         $items[] = $contact['FirstName'].','.$contact['LastName'].','.$contact['Email']. ' (error)';
     }
 
-    // send $bounced to zapier so we can do something with them
-    $res = sendBouncedToZapier(array_unique($items));
+    // send errors to zapier so we can do something with them
+    echo("sending errors and bounces to zapier\n");
+    $res = sendBouncedToZapier($ZAPIERURL, array_unique($items));
 
     echo "SUCCESS";
 
