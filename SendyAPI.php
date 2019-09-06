@@ -143,7 +143,7 @@ class SendyPHP
 
     public function substatus($email)
     {
-        if (empty($email)) {
+        if (!isset($email)) {
             return array(
                 'status' => false,
                 'message' => "'email' field is mandatory"
@@ -167,28 +167,10 @@ class SendyPHP
         }
 
         //Handle the results
-        $return = [];
-        switch ($result) {
-            case 'Subscribed':
-            case 'Unsubscribed':
-            case 'Unconfirmed':
-            case 'Bounced':
-            case 'Soft bounced':
-            case 'Complained':
-                $return = array(
-                    'status' => true,
-                    'message' => $result
-                    );
-                break;
-
-            default:
-                $return = array(
-                    'status' => false,
-                    'message' => $result
-                    );
-                break;
-        }
-        return $return;
+        return array(
+            'status' => true,
+            'message' => $result
+        );
     }
 
     public function subcount($list = "")
@@ -352,9 +334,18 @@ class SendyPHP
 
         // check status. 
         $res = $this->substatus($contact['Email']);
+        if($res['status'] === false) {
 
-        // if not subscribed then we don't want to update any details, so we won't "subscribe" again
+            fwrite(STDERR, "Error getting subscription status: \n"); 
+            fwrite(STDERR, print_r($contact, true));
+            fwrite(STDERR, $res['message']."\n");
+            return "error";
+
+        } 
+    
+        // only update details if the user is still subscribed
         if(($res['message'] == 'Subscribed') || ($res['message'] == 'Email does not exist in list')) {
+
             $subscriber = array(
                 'email' => $contact['Email'],
                 'FirstName' => $contact['FirstName'],
@@ -371,21 +362,17 @@ class SendyPHP
                 fwrite(STDERR, "Error subscribing: \n"); 
                 fwrite(STDERR, print_r($subscriber, true));
                 fwrite(STDERR, $res['message']."\n");
-                return -1;
+                return "error";
             }   
 
-        } else {
-            return 0;
         }
 
-        return 1;
+        return $res['message'];
     }
 
-    function updateSalesForceContacts(array $contacts, array $lists) 
+    function updateSalesForceContacts(&$contacts, $lists) 
     {
         $errors = 0;
-        $updated = 0;
-        $skipped = 0;
 
         $n = count($contacts) * count($lists);
         $i = 0;
@@ -395,13 +382,13 @@ class SendyPHP
         {
             echo "Updating $listname ($listid)\n";
         
-            foreach($contacts as $contact) 
+            foreach($contacts as &$contact) 
             {    
                 $res = $this->updateSalesForceContact($contact, $listid);
                 switch($res) {
-                    case -1: $errors++; break;
-                    case 0: $skipped++; break;
-                    case 1: $updated++; break;
+                    case "error": $errors++; break;
+                    default:
+                        $contact['status'] = $res;
                 }
 
                 $i++;
@@ -410,7 +397,7 @@ class SendyPHP
                 }
             }
         }  
-        return array('errors' => $errors, 'updated' => $updated, 'skipped' => $skipped);
+        return array('errors' => $errors);
     }  
     
     

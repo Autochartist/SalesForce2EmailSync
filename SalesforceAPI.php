@@ -104,7 +104,6 @@ class SalesforceAPI {
         }
 
         $result = curl_exec($curl_request);
-
         curl_close($curl_request);
 
         if ($assoc) {
@@ -144,10 +143,22 @@ class SalesforceAPI {
         return $entities;
     }
 
+    /*
+    function deleteContacts($ids)
+    {
+        foreach($ids as $id) {
+            $url = $this->baseUrl."/services/data/v20.0/sobjects/Account/" . $id;
+            echo $url."\n";
+            $response = $this->call($url, $this->getAccessToken(), 'DELETE', [], true);
+            print_r($response);
+        }
+
+    }
+    */
 
     function getContacts() 
     {
-        $query = "SELECT AccountId, firstName, lastName, Email FROM Contact";
+        $query = "SELECT Id, AccountId, firstName, lastName, Email FROM Contact";
         $groupBy = 'AccountId';
         return $this->getEntity($query, $groupBy);
     }

@@ -11,7 +11,16 @@ $lists = array(
     "ficka0htKNqsSn892U10Fh0g" => "Webinars & Education", 
     "XoIgXQqKGKyjYFhb2EUWyQ" => "Product Updates"
 );
+/*
+$lists = array( 
+    "ficka0htKNqsSn892U10Fh0g" => "Webinars & Education"
+);
+*/
 
+// Zapier webhoiok
+$ZAPIERURL = 'https://hooks.zapier.com/hooks/catch/2964702/o35se69/'; 
+
+// Sendy details
 $APIKEY = 'eYl2oczos9u9vvdW2s5T';
 $URL = 'https://sendy.autochartist.com';
 $DEFAULTLISTID = '892ihGh1ynxfV0SXPIR5R7Dg';
@@ -160,6 +169,38 @@ function print_r_n($array, $n)
     }
 }
 
+function sendBouncedToZapier($postdata)
+{
+    $curl = curl_init();
+
+    curl_setopt_array($curl, array(
+      CURLOPT_URL => "https://hooks.zapier.com/hooks/catch/2964702/o35se69/",
+      CURLOPT_RETURNTRANSFER => true,
+      CURLOPT_SSL_VERIFYPEER => 0,
+      CURLOPT_SSL_VERIFYHOST => 0,
+        CURLOPT_ENCODING => "",
+      CURLOPT_MAXREDIRS => 10,
+      CURLOPT_TIMEOUT => 5,
+      CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+      CURLOPT_CUSTOMREQUEST => "POST",
+      CURLOPT_POST => true,
+      CURLOPT_POSTFIELDS => json_encode($postdata),
+      CURLOPT_HTTPHEADER => array(
+        "Content-Type: application/json",
+      ),
+    ));
+    
+    $response = curl_exec($curl);
+    $err = curl_error($curl);
+    
+    curl_close($curl);
+    
+    if ($err) {
+      echo "cURL Error #:" . $err;
+    } else {
+      echo $response;
+    }    
+}
 
 try {
 
@@ -203,7 +244,19 @@ try {
 
     // send all details to Sendy
     $res = $sendy->updateSalesForceContacts($results, $lists);
-    echo ("updated sendy: errors: ".$res['errors'].", skipped: ". $res['skipped'].", updated: ". $res['updated']."\n");
+    echo ("updated sendy: errors: ".$res['errors']."\n");
+
+    // filter for bounced contacts
+    $bounced = [];
+    foreach($results as $contact)
+    {
+        if($contact['status'] == 'Bounced') {
+            $bounced[] = $contact['Email'];
+        }
+    }
+
+    // send $bounced to zapier so we can do something with them
+    $res = sendBouncedToZapier(array_unique($bounced));
 
     echo "SUCCESS";
 
