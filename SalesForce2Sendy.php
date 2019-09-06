@@ -17,6 +17,7 @@ $lists = array(
 );
 */
 
+
 // Zapier webhoiok
 $ZAPIERURL = 'https://hooks.zapier.com/hooks/catch/2964702/o35se69/'; 
 
@@ -61,7 +62,7 @@ function getStageImportance($sn)
 function filterOpportunities(&$opportunities)
 {
 
-    # get the most important stage per accountid
+    // get the most important stage per accountid
     $stages = [];
     foreach ($opportunities as &$accountOpp) {
         foreach ($accountOpp as &$opportunity) {
@@ -79,9 +80,9 @@ function filterOpportunities(&$opportunities)
         }
     }
 
-    # set stage name preference order
+    // set stage name preference order
     foreach ($opportunities as &$accountOpp) {
-        # remove all opportunities with StageOrder > minstage
+        // remove all opportunities with StageOrder > minstage
         $index = 0;
         foreach ($accountOpp as $opportunity) {
             $accountid = $opportunity['AccountId'];
@@ -109,12 +110,10 @@ function mergeResults($contacts, $opportunities, $configs)
         if(isset($configs[$accountid])) {
 
             $accountConfigs = $configs[$accountid];
-            #echo "\taccountConfigs found\n";
             // extract the brokerids from the accountConfigs object into an array
             foreach($accountConfigs as $config) 
             {
                 $brokerids[] = $config['BrokerID__c'];
-                #echo "\tbid ".$config['BrokerID__c']." added\n";
             }
         }
         
@@ -124,7 +123,6 @@ function mergeResults($contacts, $opportunities, $configs)
         if(isset($opportunities[$accountid])) 
         {
             $accountOpportunities = $opportunities[$accountid];
-            #echo "\taccountOpportunities found\n";
 
             // extract the product names, account names, opportunity names, stage from the accountOpportunities object into an array
             foreach($accountOpportunities as $opportunity) 
@@ -137,7 +135,6 @@ function mergeResults($contacts, $opportunities, $configs)
                     foreach($opportunity['OpportunityLineItems']['records'] as $r) 
                     {
                         $products[] = $r['PricebookEntry']['Product2']['Name'];
-                        #echo "\tadded product: ".$r['PricebookEntry']['Product2']['Name']."\n";
                     }
                 }
             }
@@ -196,10 +193,10 @@ function sendBouncedToZapier($postdata)
     curl_close($curl);
     
     if ($err) {
-      echo "cURL Error #:" . $err;
-    } else {
-      echo $response;
-    }    
+      return "cURL Error #:" . $err;
+    }
+    
+    return $response;
 }
 
 try {
@@ -247,16 +244,18 @@ try {
     echo ("updated sendy: errors: ".$res['errors']."\n");
 
     // filter for bounced contacts
-    $bounced = [];
-    foreach($results as $contact)
+    $items = [];
+    foreach($res['bounced'] as $contact)
     {
-        if($contact['status'] == 'Bounced') {
-            $bounced[] = $contact['Email'];
-        }
+        $items[] = $contact['FirstName'].','.$contact['LastName'].','.$contact['Email']. ' (bounced)';
+    }
+    foreach($res['errors'] as $contact)
+    {
+        $items[] = $contact['FirstName'].','.$contact['LastName'].','.$contact['Email']. ' (error)';
     }
 
     // send $bounced to zapier so we can do something with them
-    $res = sendBouncedToZapier(array_unique($bounced));
+    $res = sendBouncedToZapier(array_unique($items));
 
     echo "SUCCESS";
 

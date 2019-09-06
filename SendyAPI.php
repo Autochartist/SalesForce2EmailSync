@@ -336,10 +336,7 @@ class SendyPHP
         $res = $this->substatus($contact['Email']);
         if($res['status'] === false) {
 
-            fwrite(STDERR, "Error getting subscription status: \n"); 
-            fwrite(STDERR, print_r($contact, true));
-            fwrite(STDERR, $res['message']."\n");
-            return "error";
+            return "error Error getting subscription status: ".$res['message'];
 
         } 
     
@@ -359,12 +356,8 @@ class SendyPHP
             // send new info to sendy
             $res = $this->subscribe($subscriber);
             if($res['status'] != 1) {
-                fwrite(STDERR, "Error subscribing: \n"); 
-                fwrite(STDERR, print_r($subscriber, true));
-                fwrite(STDERR, $res['message']."\n");
-                return "error";
+                return "error Error subscribing: ".$res['message'];
             }   
-
         }
 
         return $res['message'];
@@ -372,7 +365,8 @@ class SendyPHP
 
     function updateSalesForceContacts(&$contacts, $lists) 
     {
-        $errors = 0;
+        $bounced = [];
+        $errors = [];
 
         $n = count($contacts) * count($lists);
         $i = 0;
@@ -382,13 +376,15 @@ class SendyPHP
         {
             echo "Updating $listname ($listid)\n";
         
-            foreach($contacts as &$contact) 
+            foreach($contacts as $contact) 
             {    
                 $res = $this->updateSalesForceContact($contact, $listid);
-                switch($res) {
-                    case "error": $errors++; break;
-                    default:
-                        $contact['status'] = $res;
+
+                if(strpos($res, 'error') !== false) {
+                    $errors[] = $contact;
+                }
+                if(strpos($res, 'Bounced') !== false) {
+                    $bounced[] = $contact;
                 }
 
                 $i++;
@@ -397,7 +393,10 @@ class SendyPHP
                 }
             }
         }  
-        return array('errors' => $errors);
+
+        $res = ['errors' => $errors, 'bounced' => $bounced];
+
+        return $res;
     }  
     
     
