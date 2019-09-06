@@ -5,17 +5,18 @@ require_once(__ROOT__.'/SendyAPI.php');
 require_once(__ROOT__.'/SalesforceAPI.php');
 
 // sendy details
+/*
 $lists = array( 
     "892ihGh1ynxfV0SXPIR5R7Dg" => "Company News", 
     "guw1GdZ38l13mv5qx3hQ892g" => "Monthly value-added", 
     "ficka0htKNqsSn892U10Fh0g" => "Webinars & Education", 
     "XoIgXQqKGKyjYFhb2EUWyQ" => "Product Updates"
 );
-/*
+*/
 $lists = array( 
     "ficka0htKNqsSn892U10Fh0g" => "Webinars & Education"
 );
-*/
+
 
 
 // Zapier webhoiok
