@@ -194,7 +194,7 @@ function sendBouncedToZapier($url, $postdata)
     curl_close($curl);
     
     if ($err) {
-      return "cURL Error #:" . $err;
+      return "cURL Error:" . $err;
     }
 
     return $response;
