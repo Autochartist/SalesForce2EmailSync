@@ -245,18 +245,18 @@ try {
 
     // filter for bounced contacts
     $items = [];
-    foreach($res['bounced'] as $contact)
-    {
-        $items[] = $contact['FirstName'].','.$contact['LastName'].','.$contact['Email']. ' (bounced)';
-    }
-    foreach($res['errors'] as $contact)
-    {
-        $items[] = $contact['FirstName'].','.$contact['LastName'].','.$contact['Email']. ' (error)';
-    }
+    #foreach($res['bounced'] as $contact)
+    #{
+    #    $items[] = $contact['FirstName'].','.$contact['LastName'].','.$contact['Email']. ' (bounced)';
+    #}
+    #foreach($res['errors'] as $contact)
+    #{
+    #    $items[] = $contact['FirstName'].','.$contact['LastName'].','.$contact['Email']. ' (error)';
+    #}
 
     // send errors to zapier so we can do something with them
-    echo("sending errors and bounces to zapier\n");
-    $res = sendBouncedToZapier($ZAPIERURL, array_unique($items));
+    #echo("sending errors and bounces to zapier\n");
+    #$res = sendBouncedToZapier($ZAPIERURL, array_unique($items));
 
     echo "SUCCESS";
 
