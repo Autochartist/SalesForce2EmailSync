@@ -39,7 +39,7 @@ class SalesforceAPI {
             "grant_type" => "password"
         );
 
-        $response = $this->call($url, null, 'POST', http_build_query($oauth2TokenArgs));
+        $response = $this->call($url, http_build_query($oauth2TokenArgs), null, 'POST');
         if (property_exists($response, "access_token") && $response->access_token != '') {
             $this->accessToken = $response->access_token;
             $this->baseUrl = $response->instance_url;
@@ -65,11 +65,11 @@ class SalesforceAPI {
      * @param bool $assoc
      * @return mixed
      */
-    public function call($url, $oauthtoken = '', $type = 'GET', $arguments = [], $assoc = false)
+    public function call($url, $payload, $oauthtoken = '', $type = 'GET', $assoc = false)
     {
-        if (strtoupper($type) == 'GET' && !empty($arguments))
+        if (strtoupper($type) == 'GET' && !empty($payload))
         {
-            $url .= "?" . $arguments;
+            $url .= "?" . $payload;
         }
 
         $curl_request = curl_init($url);
@@ -78,13 +78,9 @@ class SalesforceAPI {
         {
             curl_setopt($curl_request, CURLOPT_POST, 1);
         }
-        elseif (strtoupper($type) == 'PUT')
+        else
         {
-            curl_setopt($curl_request, CURLOPT_CUSTOMREQUEST, "PUT");
-        }
-        elseif (strtoupper($type) == 'DELETE')
-        {
-            curl_setopt($curl_request, CURLOPT_CUSTOMREQUEST, "DELETE");
+            curl_setopt($curl_request, CURLOPT_CUSTOMREQUEST, strtoupper($type));
         }
 
         curl_setopt($curl_request, CURLOPT_SSL_VERIFYPEER, 0);
@@ -93,13 +89,13 @@ class SalesforceAPI {
 
         if (!empty($oauthtoken))
         {
-            $header = ['Authorization: Bearer ' . $oauthtoken];
+            $header = ['Authorization: Bearer ' . $oauthtoken, "Content-Type: application/json"];
             curl_setopt($curl_request, CURLOPT_HTTPHEADER, $header);
         }
 
-        if (!empty($arguments) && strtoupper($type) !== 'GET')
+        if (!empty($payload) && strtoupper($type) !== 'GET')
         {
-            curl_setopt($curl_request, CURLOPT_POSTFIELDS, $arguments);
+            curl_setopt($curl_request, CURLOPT_POSTFIELDS, $payload);
         }
 
         $result = curl_exec($curl_request);
@@ -113,6 +109,18 @@ class SalesforceAPI {
         return $decodedResult;
     }
 
+    function deleteObject($objectName, $objectId)
+    {
+        $url = $this->baseUrl."/services/data/v20.0/sobjects/$objectName/" . $objectId;
+        return $this->call($url, null, $this->getAccessToken(), 'DELETE', true);
+    }
+
+    function updateRecord($objectName, $objectId, $payload)
+    {
+        $url = $this->baseUrl."/services/data/v20.0/sobjects/$objectName/$objectId";
+        return $this->call($url, json_encode($payload), $this->getAccessToken(), 'PATCH');
+    }
+
 
     function getEntity($query, $groupBy) 
     {
@@ -121,7 +129,7 @@ class SalesforceAPI {
 
         $url = $this->baseUrl."/services/data/v20.0/query?q=" . urlencode($query);
         do {
-            $response = $this->call($url, $this->getAccessToken(), 'GET', [], true);
+            $response = $this->call($url, null, $this->getAccessToken(), 'GET', true);
 
             if (!is_array($response) || (!isset($response['records'])) || (count($response['records']) == 0) ) {
                 return $entities;
@@ -142,22 +150,38 @@ class SalesforceAPI {
         return $entities;
     }
 
-    /*
+    
     function deleteContacts($ids)
     {
         foreach($ids as $id) {
-            $url = $this->baseUrl."/services/data/v20.0/sobjects/Account/" . $id;
-            echo $url."\n";
-            $response = $this->call($url, $this->getAccessToken(), 'DELETE', [], true);
-            print_r($response);
+            $this->deleteObject("Contact", $id);
         }
-
     }
-    */
+    
+    function updateContactSendyStatus($contacts)
+    {
+        $n = count($contacts);
+        $i = 0;
+        $onepercent = floor($n / 100)+1;
 
+        foreach($contacts as $contact) 
+        {    
+            $res = $this->updateRecord("Contact", $contact['Id'], ['SendyStatus__c'=>$contact['status']]);
+            if(!empty($res)) {
+                print('error updating '.$contact['Id'].' with status '.$contact['status'].': '.$res);
+            }
+
+            $i++;
+            if($i % $onepercent == 0) {
+                echo floor(($i/$n)*100)."%\n";
+            }
+
+        }
+    }
+    
     function getContacts() 
     {
-        $query = "SELECT Id, AccountId, firstName, lastName, Email FROM Contact";
+        $query = "SELECT Id, AccountId, firstName, lastName, Email FROM Contact WHERE Email <> ''";
         $groupBy = 'AccountId';
         return $this->getEntity($query, $groupBy);
     }

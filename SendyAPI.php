@@ -64,7 +64,9 @@ class SendyPHP
                 'message' => "'email' field is mandatory"
             );
         }
-
+        if(!empty($values['BrokerID'])) {
+            $type = $type;
+        }
         $type = 'subscribe.php';
 
         //Send the subscribe
@@ -327,10 +329,12 @@ class SendyPHP
         return $csv;
     }
 
-    function updateSalesForceContact($contact, $listid) 
+    function updateContact(&$contact, $listid) 
     {
         // set listid
         $this->setListId($listid);
+
+        $contact['status'] = '';    // set default status to unknown
 
         // check status. 
         $res = $this->substatus($contact['Email']);
@@ -339,7 +343,7 @@ class SendyPHP
             return "error Error getting subscription status: ".$res['message'];
 
         } 
-    
+
         // only update details if the user is still subscribed
         if(($res['message'] == 'Subscribed') || ($res['message'] == 'Email does not exist in list')) {
 
@@ -350,7 +354,9 @@ class SendyPHP
                 'AccountName' => $contact['accountname'],
                 'BrokerIDs' => self::array2csv($contact['brokerids']),
                 'Products' => self::array2csv($contact['products']),
-                'Stage' => $contact['stage']
+                'Stage' => $contact['stage'],
+                'api_key' => $this->api_key,
+                'list_id' => $this->list_id
             );
 
             // send new info to sendy
@@ -358,16 +364,19 @@ class SendyPHP
             if($res['status'] != 1) {
                 return "error Error subscribing: ".$res['message'];
             }   
+
+            $res = $this->substatus($contact['Email']);
+            if($res['status'] !== false) {
+                $contact['status'] = $res['message'];
+            }
+    
         }
 
         return $res['message'];
     }
 
-    function updateSalesForceContacts(&$contacts, $lists) 
+    function updateContacts(&$contacts, $lists) 
     {
-        $bounced = [];
-        $errors = [];
-
         $n = count($contacts) * count($lists);
         $i = 0;
         $onepercent = floor($n / 100)+1;
@@ -376,16 +385,9 @@ class SendyPHP
         {
             echo "Updating $listname ($listid)\n";
         
-            foreach($contacts as $contact) 
+            foreach($contacts as &$contact) 
             {    
-                $res = $this->updateSalesForceContact($contact, $listid);
-
-                if(strpos($res, 'error') !== false) {
-                    $errors[] = $contact;
-                }
-                if(strpos($res, 'Bounced') !== false) {
-                    $bounced[] = $contact;
-                }
+                $this->updateContact($contact, $listid);
 
                 $i++;
                 if($i % $onepercent == 0) {
@@ -393,10 +395,6 @@ class SendyPHP
                 }
             }
         }  
-
-        $res = ['errors' => $errors, 'bounced' => $bounced];
-
-        return $res;
     }  
     
     
