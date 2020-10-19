@@ -9,18 +9,10 @@ $lists = array(
     "892ihGh1ynxfV0SXPIR5R7Dg" => "Company News", 
     "guw1GdZ38l13mv5qx3hQ892g" => "Monthly value-added", 
     "ficka0htKNqsSn892U10Fh0g" => "Webinars & Education", 
-    "XoIgXQqKGKyjYFhb2EUWyQ" => "Product Updates"
-);
-/*
-$lists = array( 
+    "XoIgXQqKGKyjYFhb2EUWyQ" => "Product Updates",
     "ficka0htKNqsSn892U10Fh0g" => "Webinars & Education"
 );
-*/
 
-
-
-// Zapier webhoiok
-$ZAPIERURL = 'https://hooks.zapier.com/hooks/catch/2964702/o35se69/'; 
 
 // Sendy details
 $APIKEY = 'eYl2oczos9u9vvdW2s5T';
@@ -30,7 +22,7 @@ $DEFAULTLISTID = '892ihGh1ynxfV0SXPIR5R7Dg';
 // SalesForce details
 $baseUrl = 'https://autochartist.my.salesforce.com';
 $username = 'ilan@autochartist.com';
-$password = 'n1c0l34zb3l';
+$password = 'Svp3rm4n!';
 $consumerKey = '3MVG98_Psg5cppyY2W_omRywK7DHkgXNVxaBioZzuXYk562.R0WUQwNKpBjy9IUD6nnRtCKquzh9vD3FAzIOm';
 $consumerSecret = '386A9BFFC7F2DDCB56D6F8F9E9BFAE6AC2D2147C3DB9858868323CE46DB588DA';
 
@@ -79,7 +71,9 @@ function filterOpportunities(&$opportunities)
                 }                
             }
         }
+        unset($opportunity);
     }
+    unset($accountOpp);
 
     // set stage name preference order
     foreach ($opportunities as &$accountOpp) {
@@ -161,73 +155,40 @@ function print_r_n($array, $n)
     foreach($array as $r) 
     {
         print_r($r);
-        if($i == $n)
+        if($i == $n) {
             break;
+        }
         $i++;
     }
-}
-
-function sendBouncedToZapier($url, $postdata)
-{
-    $curl = curl_init();
-
-    curl_setopt_array($curl, array(
-      CURLOPT_URL => $url,
-      CURLOPT_RETURNTRANSFER => true,
-      CURLOPT_SSL_VERIFYPEER => 0,
-      CURLOPT_SSL_VERIFYHOST => 0,
-        CURLOPT_ENCODING => "",
-      CURLOPT_MAXREDIRS => 10,
-      CURLOPT_TIMEOUT => 5,
-      CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-      CURLOPT_CUSTOMREQUEST => "POST",
-      CURLOPT_POST => true,
-      CURLOPT_POSTFIELDS => json_encode($postdata),
-      CURLOPT_HTTPHEADER => array(
-        "Content-Type: application/json",
-      ),
-    ));
-    
-    $response = curl_exec($curl);
-    $err = curl_error($curl);
-    
-    curl_close($curl);
-    
-    if ($err) {
-      return "cURL Error:" . $err;
-    }
-
-    return $response;
 }
 
 try {
 
     //Authentificate user
-    echo("authenticating to salesforce\n");
+    print("authenticating to salesforce\n");
     $salesforceAPI = new SalesforceAPI($username, $password, $consumerKey, $consumerSecret);
     if(!$salesforceAPI->authenticate()) {
-        echo ("Invalid salesforce credentials\n");
+        print ("Invalid salesforce credentials\n");
         fwrite(STDERR, "Invalid salesforce credentials\n"); 
-        echo ("ERROR");
+        print ("ERROR");
         return;
     }
 
     // fetch opportunities
-    
-    echo("fetching opportunities\n");
+    print("fetching opportunities\n");
     $opportunities = $salesforceAPI->getOpportunities();
     filterOpportunities($opportunities);
-    echo("downloaded ".count($opportunities)." opportunities\n");
+    print("downloaded ".count($opportunities)." opportunities\n");
 
     // get configurations
-    echo("fetching configurations\n");
+    print("fetching configurations\n");
     $configs = $salesforceAPI->getConfigurations();
-    echo("downloaded ".count($configs)." configurations\n");
+    print("downloaded ".count($configs)." configurations\n");
 
     // Get contact details
-    echo("fetching contacts\n");
+    print("fetching contacts\n");
     $contacts = $salesforceAPI->getContacts();
-    echo("downloaded contacts in ".count($contacts)." accounts\n");
+    print("downloaded contacts in ".count($contacts)." accounts\n");
 
     // merge results
     $results = mergeResults($contacts, $opportunities, $configs);
@@ -243,28 +204,13 @@ try {
     // send all details to Sendy
     $res = $sendy->updateSalesForceContacts($results, $lists);
 
-    // filter for bounced contacts
-    $items = [];
-    #foreach($res['bounced'] as $contact)
-    #{
-    #    $items[] = $contact['FirstName'].','.$contact['LastName'].','.$contact['Email']. ' (bounced)';
-    #}
-    #foreach($res['errors'] as $contact)
-    #{
-    #    $items[] = $contact['FirstName'].','.$contact['LastName'].','.$contact['Email']. ' (error)';
-    #}
-
-    // send errors to zapier so we can do something with them
-    #echo("sending errors and bounces to zapier\n");
-    #$res = sendBouncedToZapier($ZAPIERURL, array_unique($items));
-
-    echo "SUCCESS";
+    print "SUCCESS";
 
 } catch(Exception $e) {
     fwrite(STDERR, $e->getMessage()."\n");
     fwrite(STDERR, "ERROR");
-    echo $e->getMessage()."\n";
-    echo "ERROR";
+    print $e->getMessage()."\n";
+    print "ERROR";
 }
 
 ?>

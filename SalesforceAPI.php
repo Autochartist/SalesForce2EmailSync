@@ -8,7 +8,6 @@ class SalesforceAPI {
     private $password;
     private $clientId;
     private $clientSecret;
-    private $debugLimit = -1;
 
     private $accessToken = null;
 
