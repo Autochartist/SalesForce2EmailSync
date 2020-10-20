@@ -200,6 +200,15 @@ try {
 
     // send all details to Sendy
     $sendy->updateContacts($results, $lists);
+
+    print("re-authenticating to salesforce\n");
+    $salesforceAPI = new SalesforceAPI($username, $password, $consumerKey, $consumerSecret);
+    if(!$salesforceAPI->authenticate()) {
+        print ("Invalid salesforce credentials\n");
+        fwrite(STDERR, "Invalid salesforce credentials\n"); 
+        print ("ERROR");
+        return;
+    }
     $salesforceAPI->updateContactSendyStatus($results);
 
     print "SUCCESS";
