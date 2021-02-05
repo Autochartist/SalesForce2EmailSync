@@ -121,24 +121,42 @@ class SalesforceAPI {
         return $this->call($url, json_encode($payload), $this->getAccessToken(), 'PATCH');
     }
 
-
-    function getEntity($query, $groupBy) 
+    function removeAttributes(&$array)
+    {   
+        foreach($array as $k => &$v) {
+            if(is_array($v)) {
+                if(array_key_exists('attributes', $v)) {
+                    unset($v['attributes']);
+                }
+                $this->removeAttributes($v);
+            }
+        }
+    }
+    
+    function getEntity($query, $groupBy = NULL) 
     {
-        $query .= " order by $groupBy";
+        if(!empty($groupBy)) {
+            $query .= " order by $groupBy";
+        }
         $entities = [];
 
         $url = $this->baseUrl."/services/data/v20.0/query?q=" . urlencode($query);
         do {
             $response = $this->call($url, null, $this->getAccessToken(), 'GET', true);
-
+            
             if (!is_array($response) || (!isset($response['records'])) || (count($response['records']) == 0) ) {
                 return $entities;
             }
+            $array = $response['records'];
+            $this->removeAttributes($array);
 
-            foreach ($response['records'] as $record) {
-                unset($record['attributes']);            
-                $id = $record[$groupBy];
-                $entities[$id][] = $record;
+            if(!empty($groupBy)) {
+                foreach ($array as $record) {
+                    $id = $record[$groupBy];
+                    $entities[$id][] = $record;
+                }
+            } else {
+                $entities = array_merge($entities, $array);
             }
 
             if($response['done'] == false) {
@@ -181,9 +199,15 @@ class SalesforceAPI {
     
     function getContacts() 
     {
-        $query = "SELECT Id, AccountId, firstName, lastName, Email FROM Contact WHERE Email <> ''";
+        $query = "SELECT Id, AccountId, firstName, lastName, Email, Account.Name FROM Contact WHERE Email <> ''";
         $groupBy = 'AccountId';
         return $this->getEntity($query, $groupBy);
+    }
+
+    function getAccounts() 
+    {
+        $query = "SELECT Id, Name FROM Account";
+        return $this->getEntity($query);
     }
 
 
@@ -197,11 +221,91 @@ class SalesforceAPI {
 
     function getOpportunities()
     {
-        $query = "SELECT Id, Name, AccountId, Account.Name, StageName, (Select Id, PricebookEntry.Product2.Name From OpportunityLineItems) FROM Opportunity";
+        $query = "SELECT Id, Name, AccountId, StageName, (Select Id, PricebookEntry.Product2.Name From OpportunityLineItems) FROM Opportunity";
         $groupBy = 'AccountId';
         return $this->getEntity($query, $groupBy);
     }
 
 }
+
+/*
+$objectStr = "{
+	\"totalSize\": 1198,
+	\"done\": true,
+	\"records\": [{
+		\"attributes\": {
+			\"type\": \"Account\",
+			\"url\": \"\/services\/data\/v20.0\/sobjects\/Account\/0015800001gZcLoAAK\"
+		},
+		\"Id\": \"0015800001gZcLoAAK\",
+		\"Name\": \"Dynamic works \/ Syntellicore CRM\",
+		\"Blah\": [
+            {
+                \"attributes\": {
+                    \"type\": \"Account\",
+                    \"url\": \"\/services\/data\/v20.0\/sobjects\/Account\/0015800001gZcLoAAK\"
+                },
+                \"Id\": \"0015800001gZcLoAAK\",
+                \"Name\": \"Dynamic works \/ Syntellicore CRM\"
+            },
+            {
+                \"attributes\": {
+                    \"type\": \"Account\",
+                    \"url\": \"\/services\/data\/v20.0\/sobjects\/Account\/0015800001gZcLoAAK\"
+                },
+                \"Id\": \"0015800001gZcLoAAK\",
+                \"Name\": \"Dynamic works \/ Syntellicore CRM\"
+            },
+            {
+                \"attributes\": {
+                    \"type\": \"Account\",
+                    \"url\": \"\/services\/data\/v20.0\/sobjects\/Account\/0015800001gZcLoAAK\"
+                },
+                \"Id\": \"0015800001gZcLoAAK\",
+                \"Name\": \"Dynamic works \/ Syntellicore CRM\"                
+            }
+        ]
+	}, {
+		\"attributes\": {
+			\"type\": \"Account\",
+			\"url\": \"\/services\/data\/v20.0\/sobjects\/Account\/0015800001ga3epAAA\"
+		},
+		\"Id\": \"0015800001ga3epAAA\",
+		\"Name\": \"Broker Solutions\",
+		\"Blah\": [
+            {
+                \"attributes\": {
+                    \"type\": \"Account\",
+                    \"url\": \"\/services\/data\/v20.0\/sobjects\/Account\/0015800001gZcLoAAK\"
+                },
+                \"Id\": \"0015800001gZcLoAAK\",
+                \"Name\": \"Dynamic works \/ Syntellicore CRM\"
+            },
+            {
+                \"attributes\": {
+                    \"type\": \"Account\",
+                    \"url\": \"\/services\/data\/v20.0\/sobjects\/Account\/0015800001gZcLoAAK\"
+                },
+                \"Id\": \"0015800001gZcLoAAK\",
+                \"Name\": \"Dynamic works \/ Syntellicore CRM\"
+            },
+            {
+                \"attributes\": {
+                    \"type\": \"Account\",
+                    \"url\": \"\/services\/data\/v20.0\/sobjects\/Account\/0015800001gZcLoAAK\"
+                },
+                \"Id\": \"0015800001gZcLoAAK\",
+                \"Name\": \"Dynamic works \/ Syntellicore CRM\"                
+            }
+        ]
+    }]
+}";
+
+
+$array = json_decode($objectStr, true);
+$array = $array['records'];
+removeAttributes($array);
+var_dump($array);
+*/
 
 ?>

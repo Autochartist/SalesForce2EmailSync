@@ -85,48 +85,33 @@ function filterOpportunities(&$opportunities)
             $index++;
         }
     }
+    unset($accountOpp);
+
+    return $stages;
 }
 
 
 // merges contacts, opportunities and configs into objects we can send to sendy
-function mergeResults($contacts, $opportunities, $configs)
+function mergeResults($contacts, $opportunities, $accountBrokerIds, $accountStages)
 {
     // Merge results in desired format
     $results = [];
     
     foreach ($contacts as $accountid => $accountContacts) 
     {
-
-        $brokerids = [];
-
-        if(isset($configs[$accountid])) {
-
-            $accountConfigs = $configs[$accountid];
-            // extract the brokerids from the accountConfigs object into an array
-            foreach($accountConfigs as $config) 
-            {
-                $brokerids[] = $config['BrokerID__c'];
-            }
-        }
-        
         $products = [];
-        $stage = null;
-        $accountname = null;
-        if(isset($opportunities[$accountid])) 
+        if(array_key_exists($accountid, $opportunities)) 
         {
             $accountOpportunities = $opportunities[$accountid];
 
-            // extract the product names, account names, opportunity names, stage from the accountOpportunities object into an array
+            // extract the product names, account names, opportunity names from the accountOpportunities object into an array
             foreach($accountOpportunities as $opportunity) 
             {
-                $accountname = $opportunity['Account']['Name'];
-                $stage = $opportunity['StageName'];
-
                 if(isset($opportunity['OpportunityLineItems']))
                 {
                     foreach($opportunity['OpportunityLineItems']['records'] as $r) 
                     {
-                        $products[] = $r['PricebookEntry']['Product2']['Name'];
+                        $products[$r['PricebookEntry']['Product2']['Name']] = $r['PricebookEntry']['Product2']['Name']; // make sure we dont have duplicates
                     }
                 }
             }
@@ -135,10 +120,20 @@ function mergeResults($contacts, $opportunities, $configs)
 
         // add all the brokerids and products accountContacts
         foreach($accountContacts as $contact) {
-            $contact['stage'] = $stage;
-            $contact['accountname'] = $accountname;
-            $contact['products'] = $products;
-            $contact['brokerids'] = $brokerids;
+            $contact['stage'] = "none";
+            if(array_key_exists($accountid, $accountStages)) {
+                $contact['stage'] = $accountStages[$accountid];
+            }
+            $contact['accountname'] = "none";
+            if(array_key_exists('Account', $contact)) {
+                $contact['accountname'] = $contact['Account']['Name'];
+                unset($contact['Account']);
+            }
+            $contact['products'] = implode(', ', array_keys($products));
+            $contact['brokerids'] = "";
+            if(array_key_exists($accountid, $accountBrokerIds)) {
+                $contact['brokerids'] = $accountBrokerIds[$accountid];
+            }
             $results[] = $contact;
         }
         
@@ -159,6 +154,23 @@ function print_r_n($array, $n)
     }
 }
 
+function mergeBrokerIDs($array)
+{
+    $brokerIds = [];
+    foreach($array as $accountid => $configs) {
+        if(!is_array($configs))
+            continue;
+        foreach($configs as $config) {
+            if(!array_key_exists($config['Account__c'], $brokerIds)) {
+                $brokerIds[$config['Account__c']] = $config['BrokerID__c'];
+            } else {
+                $brokerIds[$config['Account__c']] = $brokerIds[$config['Account__c']] . ', ' . $config['BrokerID__c'];
+            }
+        }
+    }
+    return $brokerIds;
+}
+
 try {
 
     //Authentificate user
@@ -171,24 +183,31 @@ try {
         return;
     }
 
-    // fetch opportunities
-    print("fetching opportunities\n");
-    $opportunities = $salesforceAPI->getOpportunities();
-    filterOpportunities($opportunities);
-    print("downloaded ".count($opportunities)." opportunities\n");
+    // fetch accounts
+    #print("fetching accounts\n");
+    #$accounts = $salesforceAPI->getAccounts();
+    #print("downloaded ".count($accounts)." accounts\n");
 
     // get configurations
     print("fetching configurations\n");
     $configs = $salesforceAPI->getConfigurations();
+    $accountBrokerIds = mergeBrokerIDs($configs);
     print("downloaded ".count($configs)." configurations\n");
+    
+    // fetch opportunities
+    print("fetching opportunities\n");
+    $opportunities = $salesforceAPI->getOpportunities();
+    $accountStages = filterOpportunities($opportunities);
+    print("downloaded ".count($opportunities)." opportunities\n");
 
     // Get contact details
     print("fetching contacts\n");
     $contacts = $salesforceAPI->getContacts();
+    unset($contacts[""]);
     print("downloaded contacts in ".count($contacts)." accounts\n");
 
     // merge results
-    $results = mergeResults($contacts, $opportunities, $configs);
+    $results = mergeResults($contacts, $opportunities, $accountBrokerIds, $accountStages);
 
     // create sendy object
     $sendy = new \SendyPHP\SendyPHP(

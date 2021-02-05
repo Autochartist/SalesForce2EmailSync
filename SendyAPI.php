@@ -338,10 +338,10 @@ class SendyPHP
 
         // check status. 
         $res = $this->substatus($contact['Email']);
-        if($res['status'] === false) {
-
+        if($res['status'] !== false) {
+            $contact['status'] = $res['message'];
+        } else {
             return "error Error getting subscription status: ".$res['message'];
-
         } 
 
         // only update details if the user is still subscribed
@@ -352,8 +352,8 @@ class SendyPHP
                 'FirstName' => $contact['FirstName'],
                 'LastName' => $contact['LastName'],
                 'AccountName' => $contact['accountname'],
-                'BrokerIDs' => self::array2csv($contact['brokerids']),
-                'Products' => self::array2csv($contact['products']),
+                'BrokerIDs' => $contact['brokerids'],
+                'Products' => $contact['products'],
                 'Stage' => $contact['stage'],
                 'api_key' => $this->api_key,
                 'list_id' => $this->list_id
@@ -361,15 +361,10 @@ class SendyPHP
 
             // send new info to sendy
             $res = $this->subscribe($subscriber);
-            if($res['status'] != 1) {
+            if($res['status'] !== true) {
                 return "error Error subscribing: ".$res['message'];
             }   
 
-            $res = $this->substatus($contact['Email']);
-            if($res['status'] !== false) {
-                $contact['status'] = $res['message'];
-            }
-    
         }
 
         return $res['message'];
