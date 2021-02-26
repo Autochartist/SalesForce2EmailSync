@@ -345,7 +345,7 @@ class SendyPHP
         } 
 
         // only update details if the user is still subscribed
-        if(($res['message'] == 'Subscribed') || ($res['message'] == 'Email does not exist in list')) {
+        if(($contact['status'] == 'Subscribed') || ($contact['status'] == 'Email does not exist in list')) {
 
             $subscriber = array(
                 'email' => $contact['Email'],
@@ -361,12 +361,13 @@ class SendyPHP
 
             // send new info to sendy
             $res = $this->subscribe($subscriber);
+            $contact['status'] = $res['message'];
             if($res['status'] !== true) {
-                return "error Error subscribing: ".$res['message'];
-            }   
+                return "Error subscribing: ".$res['message'];
+            }
 
         }
-
+        
         return $res['message'];
     }
 

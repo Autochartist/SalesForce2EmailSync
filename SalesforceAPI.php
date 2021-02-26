@@ -39,7 +39,7 @@ class SalesforceAPI {
             "grant_type" => "password"
         );
 
-        $response = $this->call($url, http_build_query($oauth2TokenArgs), null, 'POST');
+        $response = $this->call($url, http_build_query($oauth2TokenArgs), null, 'POST', false);
         if (property_exists($response, "access_token") && $response->access_token != '') {
             $this->accessToken = $response->access_token;
             $this->baseUrl = $response->instance_url;
@@ -65,7 +65,7 @@ class SalesforceAPI {
      * @param bool $assoc
      * @return mixed
      */
-    public function call($url, $payload, $oauthtoken = '', $type = 'GET', $assoc = false)
+    public function call($url, $payload, $oauthtoken = '', $type = 'GET', $assoc = true)
     {
         if (strtoupper($type) == 'GET' && !empty($payload))
         {
@@ -93,9 +93,10 @@ class SalesforceAPI {
             curl_setopt($curl_request, CURLOPT_HTTPHEADER, $header);
         }
 
-        if (!empty($payload) && strtoupper($type) !== 'GET')
+        if (!empty($payload) && strtoupper($type) != 'GET')
         {
             curl_setopt($curl_request, CURLOPT_POSTFIELDS, $payload);
+            print_r($payload);
         }
 
         $result = curl_exec($curl_request);
@@ -103,21 +104,29 @@ class SalesforceAPI {
 
         if ($assoc) {
             $decodedResult = json_decode($result, true);
+            if(strpos($url, '0035800000zgxCbAAI') > 0) {
+                print_r($decodedResult);
+            }                
         } else {
             $decodedResult = json_decode($result);
+            if(strpos($url, '0035800000zgxCbAAI') > 0) {
+                print_r($decodedResult);
+            }                
         }
+        var_dump($decodedResult);
+
         return $decodedResult;
     }
 
     function deleteObject($objectName, $objectId)
     {
-        $url = $this->baseUrl."/services/data/v20.0/sobjects/$objectName/" . $objectId;
-        return $this->call($url, null, $this->getAccessToken(), 'DELETE', true);
+        $url = $this->baseUrl."/services/data/v50.0/sobjects/$objectName/" . $objectId;
+        return $this->call($url, null, $this->getAccessToken(), 'DELETE');
     }
 
     function updateRecord($objectName, $objectId, $payload)
     {
-        $url = $this->baseUrl."/services/data/v20.0/sobjects/$objectName/$objectId";
+        $url = $this->baseUrl."/services/data/v50.0/sobjects/$objectName/$objectId";
         return $this->call($url, json_encode($payload), $this->getAccessToken(), 'PATCH');
     }
 
@@ -140,9 +149,9 @@ class SalesforceAPI {
         }
         $entities = [];
 
-        $url = $this->baseUrl."/services/data/v20.0/query?q=" . urlencode($query);
+        $url = $this->baseUrl."/services/data/v50.0/query?q=" . urlencode($query);
         do {
-            $response = $this->call($url, null, $this->getAccessToken(), 'GET', true);
+            $response = $this->call($url, null, $this->getAccessToken(), 'GET');
             
             if (!is_array($response) || (!isset($response['records'])) || (count($response['records']) == 0) ) {
                 return $entities;
