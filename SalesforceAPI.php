@@ -96,7 +96,6 @@ class SalesforceAPI {
         if (!empty($payload) && strtoupper($type) != 'GET')
         {
             curl_setopt($curl_request, CURLOPT_POSTFIELDS, $payload);
-            print_r($payload);
         }
 
         $result = curl_exec($curl_request);
