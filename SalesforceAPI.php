@@ -104,16 +104,9 @@ class SalesforceAPI {
 
         if ($assoc) {
             $decodedResult = json_decode($result, true);
-            if(strpos($url, '0035800000zgxCbAAI') > 0) {
-                print_r($decodedResult);
-            }                
         } else {
             $decodedResult = json_decode($result);
-            if(strpos($url, '0035800000zgxCbAAI') > 0) {
-                print_r($decodedResult);
-            }                
         }
-        var_dump($decodedResult);
 
         return $decodedResult;
     }
