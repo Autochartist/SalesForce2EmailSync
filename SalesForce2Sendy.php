@@ -5,10 +5,10 @@ require_once(dirname(__FILE__).'/SalesforceAPI.php');
 
 // sendy details
 $lists = array(
+    "XoIgXQqKGKyjYFhb2EUWyQ" => "Product Updates",
     "892ihGh1ynxfV0SXPIR5R7Dg" => "Company News", 
     "guw1GdZ38l13mv5qx3hQ892g" => "Monthly value-added", 
     "ficka0htKNqsSn892U10Fh0g" => "Webinars & Education",
-    "XoIgXQqKGKyjYFhb2EUWyQ" => "Product Updates",
     "w1H7vihJ3F763Ae7tuCg0dwg" => "Delkos - Product Updates"
 );
 
