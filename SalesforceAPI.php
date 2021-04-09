@@ -133,7 +133,39 @@ class SalesforceAPI {
             }
         }
     }
-    
+
+    function get($objectName)
+    {
+        $fields = $this->getFieldNames($objectName);
+        $fielsNames = implode(',', $fields);
+        $query = "SELECT $fielsNames FROM $objectName";
+        return $this->getEntity($query);
+    }
+
+    function getFieldNames($objectName)
+    {
+        $names = [];
+        $fields = $this->getFields($objectName);
+
+        foreach($fields as $f) {
+            $names[] = $f['name'];
+        }
+
+        return $names;
+    }
+
+    function getFields($objectName)
+    {
+        $md = $this->getMetaData($objectName);
+        return $md['fields'];        
+    }
+
+    function getMetaData($objectName)
+    {
+        $url = $this->baseUrl."/services/data/v50.0/sobjects/$objectName/describe";
+        return $this->call($url, null, $this->getAccessToken(), 'GET');
+    }
+
     function getEntity($query, $groupBy = NULL) 
     {
         if(!empty($groupBy)) {
@@ -204,10 +236,16 @@ class SalesforceAPI {
         $groupBy = 'AccountId';
         return $this->getEntity($query, $groupBy);
     }
-
+   
     function getAccounts() 
     {
         $query = "SELECT Id, Name FROM Account";
+        return $this->getEntity($query);
+    }
+
+    function getEmailTemplates()
+    {
+        $query = "SELECT SELECT Body, BrandTemplateId, CreatedById, CreatedDate, Description, DeveloperName, Encoding, EnhancedLetterheadId, FolderId, FolderName, HtmlValue, Id, IsActive, IsBuilderContent, LastModifiedById, LastModifiedDate, LastUsedDate, Markup, Name, NamespacePrefix, OwnerId, RelatedEntityType, Subject, SystemModstamp, TemplateStyle, TemplateType, TimesUsed, UiType FROM EmailTemplate FROM EmailTemplates";
         return $this->getEntity($query);
     }
 
